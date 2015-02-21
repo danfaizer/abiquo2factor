@@ -23,7 +23,6 @@ class Validate
       $token.update(:updated_at => Time.now, :enabled => true, :status => 'VALIDATED')
       $token.save
     rescue => e
-      puts e
       update_token_status('VALIDATION_ERROR',$token.token_id)
     end
   end

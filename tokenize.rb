@@ -24,7 +24,6 @@ def send_token(token,email)
       body     "Token: #{token}"
     end
   rescue => e
-    update_token_status('DELIVERY_ERROR',$token.token_id)
     puts e
   end
 end 
@@ -58,7 +57,6 @@ class Tokenize
         break if $found
       end
     rescue => e
-      puts e
       update_token_status('CONNECTION_ERROR',$token.token_id)
     end
     if $found
@@ -68,7 +66,7 @@ class Tokenize
         send_token($token.token,$token.email)
         update_token_status('SENT',$token.token_id)
       rescue => e
-        puts e
+        update_token_status('DELIVERY_ERROR',$token.token_id)
       end
     else
       update_token_status('LOOKUP_ERROR',$token.token_id)
