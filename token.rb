@@ -1,6 +1,17 @@
 require "data_mapper"
 require "yaml"
 
+def update_token_status(status,token_id)
+  begin
+    token = Token.get(token_id)
+    token.updated_at = Time.now
+    token.status = status
+    token.save
+  rescue => e
+    puts e
+  end
+end
+
 APP_CONFIG = YAML.load_file('./config.yml')
 connection_string = "mysql://#{APP_CONFIG['mysql']['user']}:#{APP_CONFIG['mysql']['pass']}@#{APP_CONFIG['mysql']['host']}/#{APP_CONFIG['mysql']['db']}"
 
@@ -12,32 +23,19 @@ class Token
 
   include DataMapper::Resource
 
-  property :token_id,    Serial
+  property :token_id, Serial
   property :token, String
   property :created_at, DateTime
+  property :updated_at, DateTime
   property :username, String
   property :email, String
   property :enabled, Boolean, :default  => false
   property :enterprise_id, Integer
   property :user_id, Integer
-
-end
-
-class Event
-
-  include DataMapper::Resource
-
-  property :event_id,    Serial
-  property :created_at, DateTime
-  property :updated_at, DateTime
-  property :username, String
-  property :email, String
   property :ip_address, String
-  property :status, String
+  property :status, String, :default => "CREATED"
 
 end
 
 Token.auto_upgrade!
 Token.raise_on_save_failure = true 
-Event.auto_upgrade!
-Event.raise_on_save_failure = true 
