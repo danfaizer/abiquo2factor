@@ -1,7 +1,7 @@
 require "sinatra"
 require "resque"
 require "abiquo-api"
-require "./token"
+require "./model"
 require "./tokenize"
 
 class Abiquo2FA < Sinatra::Base
@@ -12,8 +12,14 @@ class Abiquo2FA < Sinatra::Base
 
 	post "/token/?" do
     begin
-      Resque.enqueue(Tokenize, params[:username], params[:email])
-      erb :authenticate
+      $event = Event.new(:created_at => Time.now, :updated_at => Time.now, :username => params[:username], :email => params[:email], :ip_address => request.ip, :status => 'ENQUEUED')
+      $event.save
+    rescue => e
+      puts e
+    end
+    begin
+      Resque.enqueue(Tokenize, params[:username], params[:email],$event.event_id)
+      erb :validate, :locals => { :event_id => $event.event_id }
     rescue
       "There was a problem generating validation token. Try again later!"
     end
