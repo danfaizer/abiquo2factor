@@ -1,9 +1,60 @@
-<!-- TO DO: Javascript to track if token has been sent -->
+<html>
+  <head>
+    <title>Abiquo 2 Factor Authentication</title>
+    <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.11.2/jquery.min.js"></script>
+  </head>
+  <body>
+    <div id="token_status"><img src="/loading.gif"></div>
+    <form action="/validate" method="post">
+      <label for="token">Token:</label>
+      <input id="token" type="text" name="token" placeholder="Insert your token" focus>
+      <br>
+      <input type="hidden" name="token_id" id="token_id" value=<%= "\"#{token_id}\"" %>>
+      <input type="submit">
+    </form>
 
-<form action="/validate" method="post">
-  <label for="token">Token:</label>
-  <input id="token" type="text" name="token" placeholder="Insert your token" focus>
-  <br>
-  <input type="hidden" name="token_id" id="token_id" value=<%= "\"#{token_id}\"" %>>
-  <input type="submit">
-</form>
+    <script>
+      function check_token_status() {
+        var queryjob;
+        var token_id = $("#token_id").val();
+        
+        if ((document.getElementById("token_status")) && (token_id != null)) {
+          executeQueryTokenStatus();
+        } else {
+          console.log("No suitable information provided!");
+          window.clearTimeout(queryjob);
+        }
+
+        function executeQueryTokenStatus() {
+          $.ajax({
+            url: '/status/'+token_id, 
+            dataType: "json",
+            success: function(data) {
+              console.log(data);
+              if (data == null) {
+                console.log("Wrong server response!");
+                window.clearTimeout(queryjob);
+              } else {
+                var status = data.status;
+                switch(status) {
+                  case 'SENT':
+                    $("#token_status").html('Token has been sent to provided email address. Check your inbox and validate the token.');
+                    window.clearTimeout(queryjob);
+                    break;
+                  case 'LOOKUP_ERROR':
+                    $("#token_status").html('Provided Abiquo username and email address pair does not match.');
+                    window.clearTimeout(queryjob);
+                    break;  
+                }
+              }
+            }
+          });
+          queryjob = setTimeout(executeQueryTokenStatus, 5000);
+        }
+      }
+
+      $(document).on('page:change', check_token_status);
+      $(document).ready(check_token_status);
+    </script>
+  </body>
+</html>

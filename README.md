@@ -10,5 +10,5 @@ mysql -u user -p password -e 'create database token'
 start server:
 bundle exec rackup
 
-start Resque worker:
-rake resque:work QUEUE=*
+start Resque workers (one per each queue):
+TERM_CHILD=1 QUEUE=* COUNT=2 rake resque:workers

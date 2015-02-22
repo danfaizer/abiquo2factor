@@ -4,8 +4,7 @@ require "yaml"
 def update_token_status(status,token_id)
   begin
     token = Token.get(token_id)
-    token.updated_at = Time.now
-    token.status = status
+    token.update(:updated_at => Time.now, :status => status)
     token.save
   rescue => e
     puts e

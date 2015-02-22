@@ -22,9 +22,8 @@ require "./validate"
 # Check if token is expired or alive
 # True => token is expired
 # False => token is alive
-def token_exipred(token_id)
-  token = Token.get(token_id)
-  ((token.created_at + APP_CONFIG['abiquo']['token_timeout'].seconds) < Time.now) ? true : false
+def token_exipred(created_at)
+  ((created_at + APP_CONFIG['abiquo']['token_timeout'].seconds) < Time.now) ? true : false
 end
 
 class Abiquo2FA < Sinatra::Base
@@ -74,10 +73,16 @@ class Abiquo2FA < Sinatra::Base
   # Resource to track token request status
   get "/status/:token_id" do
     content_type :json
-    if (token_exipred(params[:token_id]))
-      "{'status' => 'EXPIRED_ERROR'}"
-    else
-      "{'status' => '#{event.status}'}"
+    begin
+      $token = Token.get(params[:token_id])
+
+      if (token_exipred($token.created_at))
+        '{"status" : "EXPIRED_ERROR"}'
+      else
+        '{"status" : "'+$token.status+'"}'
+      end
+    rescue => e
+      '{"status" : "UNEXPECTED_ERROR"}'
     end
   end
 
