@@ -36,7 +36,10 @@ class Tokenize
   def self.perform(username,email,token_id) 
     begin
       $token = Token.get(token_id)
-      abiquo = AbiquoAPI.new(:abiquo_api_url => APP_CONFIG['abiquo']['api_url'], :abiquo_username => APP_CONFIG['abiquo']['api_user'], :abiquo_password => APP_CONFIG['abiquo']['api_pass'])
+      abiquo = AbiquoAPI.new( :abiquo_api_url => APP_CONFIG['abiquo']['api_url'], 
+                              :abiquo_username => APP_CONFIG['abiquo']['api_user'], 
+                              :abiquo_password => APP_CONFIG['abiquo']['api_pass'],
+                              :connection_options => { :connect_timeout => 15 })
 
       enterprises_link = AbiquoAPI::Link.new(:href => '/api/admin/enterprises', :type => 'application/vnd.abiquo.enterprises+json', :client => abiquo)
       enterprises = enterprises_link.get
@@ -56,20 +59,24 @@ class Tokenize
         end
         break if $found
       end
+      if $found
+        if APP_CONFIG['abiquo']['exclude_users'].include? $user_id
+          update_token_status('REDIRECT',$token.token_id)
+        else
+          begin
+            $token.update(:updated_at => Time.now, :user_id => $user_id, :enterprise_id => $enterprise_id)
+            $token.save
+            send_token($token.token,$token.email)
+            update_token_status('SENT',$token.token_id)
+          rescue => e
+            update_token_status('DELIVERY_ERROR',$token.token_id)
+          end
+        end
+      else
+        update_token_status('LOOKUP_ERROR',$token.token_id)
+      end
     rescue => e
       update_token_status('CONNECTION_ERROR',$token.token_id)
-    end
-    if $found
-      begin
-        $token.update(:updated_at => Time.now, :user_id => $user_id, :enterprise_id => $enterprise_id)
-        $token.save
-        send_token($token.token,$token.email)
-        update_token_status('SENT',$token.token_id)
-      rescue => e
-        update_token_status('DELIVERY_ERROR',$token.token_id)
-      end
-    else
-      update_token_status('LOOKUP_ERROR',$token.token_id)
     end
   end
 

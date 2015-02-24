@@ -23,10 +23,11 @@ require "./validate"
 # True => token is expired
 # False => token is alive
 def token_exipred(created_at)
-  ((created_at + APP_CONFIG['abiquo']['token_timeout'].seconds) < Time.now) ? true : false
+  ((created_at + APP_CONFIG['abiquo']['token_timeout'].to_i.seconds) < Time.now) ? true : false
 end
 
 class Abiquo2FA < Sinatra::Base
+
 
   get "/" do
     erb :login
@@ -34,10 +35,17 @@ class Abiquo2FA < Sinatra::Base
 
 	post "/token/?" do
     begin
-      $token = Token.new(:token => SecureRandom.uuid, :created_at => Time.now, :updated_at => Time.now, :username => params[:username], :email => params[:email], :ip_address => request.ip, :status => 'PROCESSING')
+      $token = Token.new( :token => SecureRandom.uuid,
+                          :created_at => Time.now,
+                          :updated_at => Time.now,
+                          :username => params[:username],
+                          :email => params[:email],
+                          :ip_address => request.ip,
+                          :status => 'PROCESSING')
       $token.save
+
       Resque.enqueue(Tokenize, params[:username], params[:email], $token.token_id)
-      erb :validate, :locals => { :token_id => $token.token_id }
+      erb :validate, :locals => { :token_id => $token.token_id, :abiquo_login_url => APP_CONFIG['abiquo']['abiquo_login_url'] }
     rescue => e
       update_token_status('VALIDATION_ERROR',$token.token_id)
       erb :error
@@ -60,7 +68,7 @@ class Abiquo2FA < Sinatra::Base
       begin
         update_token_status('PROCESSING',$token.token_id)
         Resque.enqueue(Validate, $token.token_id)
-        erb :authorize, :locals => { :token_id => $token.token_id }
+        erb :authorize, :locals => { :token_id => $token.token_id, :abiquo_login_url => APP_CONFIG['abiquo']['abiquo_login_url'] }
       rescue => e
         update_token_status('VALIDATION_ERROR',$token.token_id)
         erb :error

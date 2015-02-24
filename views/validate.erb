@@ -1,18 +1,22 @@
 <html>
   <head>
     <title>Abiquo 2 Factor Authentication</title>
-    <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.11.2/jquery.min.js"></script>
+    <script src="/jquery.min.js"></script>
   </head>
   <body>
-    <div id="token_status"><img src="/loading.gif"></div>
-    <form action="/validate" method="post">
-      <label for="token">Token:</label>
-      <input id="token" type="text" name="token" placeholder="Insert your token" focus>
-      <br>
-      <input type="hidden" name="token_id" id="token_id" value=<%= "\"#{token_id}\"" %>>
-      <input type="submit">
-    </form>
-
+    <div id="token_status">
+      <img src="/loading.gif">
+      <p>Generating token</p>
+    </div>
+    <div id="validate_form">
+      <form action="/validate" method="post">
+        <label for="token">Token:</label>
+        <input id="token" type="text" name="token" placeholder="Insert your token" focus>
+        <br>
+        <input type="hidden" name="token_id" id="token_id" value=<%= "\"#{token_id}\"" %>>
+        <input type="submit">
+      </form>
+    </div>
     <script>
       function check_token_status() {
         var queryjob;
@@ -43,8 +47,24 @@
                     break;
                   case 'LOOKUP_ERROR':
                     $("#token_status").html('Provided Abiquo username and email address pair does not match.');
+                    $("#validate_form").html('<input type="button" onclick="history.back();" value="Back">');
                     window.clearTimeout(queryjob);
-                    break;  
+                    break;
+                  case 'CONNECTION_ERROR':
+                    $("#token_status").html('There was a problem connecting to Abiquo API.<br>Please, try again later or contact Abiquo administrator.');
+                    $("#validate_form").html('<input type="button" onclick="history.back();" value="Back">');
+                    window.clearTimeout(queryjob);
+                    break;
+                  case 'UNEXPECTED_ERROR':
+                    $("#token_status").html('There was an unexpected error.<br>Please, try again later or contact Abiquo administrator.');
+                    $("#validate_form").html('<input type="button" onclick="history.back();" value="Back">');
+                    window.clearTimeout(queryjob);
+                    break;                 
+                  case 'VALIDATED':
+                    $("#token_status").html('Redirecting to Abiquo login page.');
+                    $("#validate_form").html('');
+                    window.location.replace(<%= "\"#{abiquo_login_url}\"" %>);
+                    break;
                 }
               }
             }
