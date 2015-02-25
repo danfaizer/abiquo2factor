@@ -20,8 +20,10 @@ class Validate
       
       user_link = AbiquoAPI::Link.new(:href => "/api/admin/enterprises/#{$token.enterprise_id}/users/#{$token.user_id}", :type => 'application/vnd.abiquo.user+json', :client => abiquo)
       user = user_link.get
-      user.active = true
-      user.update
+      if !user.active
+        user.active = true
+        user.update
+      end
 
       $token.update(:updated_at => Time.now, :enabled => true, :status => 'VALIDATED')
       $token.save

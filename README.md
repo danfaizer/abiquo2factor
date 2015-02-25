@@ -8,6 +8,7 @@ Requirements:
  * Mysql and libs
  * Redis
  * Smtp relay
+ * Cron daemon
 
 ## Installation:
 
@@ -47,6 +48,17 @@ service postfix start
 
 # You can set Postfix to start when boot
 chkconfig postfix on
+```
+### Install Cron daemon:
+```bash
+# Install Cron daemon:
+yum install cronie
+
+# Start Cron service:
+service crond start
+
+# You can set Postfix to start when boot
+chkconfig crond on
 ```
 
 ### Install Redis:
@@ -92,7 +104,7 @@ abiquo:
   api_url: https://10.60.13.29/api
   api_user: admin
   api_pass: xabiquo
-  exclude_users: [1,11]
+  exclude_users: [1,2,3,4,5]
   session_timeout: 1800
   token_timeout: 300
 smtp:
@@ -102,11 +114,22 @@ smtp:
   smtp_port: 25
   mail_from: abiquo2f@mydomain.com
 ```
+### Enable user session expiration in Cron
+Abiquo2factor requires that Abiquo users are disabled when the token is being generated. To  force user use the 2 factor authentication we should enable a cron task that disables the user when session expires.
+
+```bash
+# To see the session expiration cron job execute:
+whenever
+
+# To enable the session expiration cron job execute:
+whenever -w
+```
 
 ### Create MySQL token database:
 ```bash
 mysql -u root -Nse "create database token"
 ```
+By default, session expiration con job runs every 10 minutes, but you can easily change run schedule by editing cron <code>crontab -e</code> or modifying <code>tasks/schedule.rb</code> file.
 
 ### Abiquo session expire cron task:
 <code>TO-DO</code>: Cron, rake, whenever task to disable all Abiquo user's except excluded ones.

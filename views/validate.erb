@@ -6,16 +6,10 @@
   <body>
     <div id="token_status">
       <img src="/loading.gif">
-      <p>Generating token</p>
+      <p>Validating token. Please wait.</p>
     </div>
     <div id="validate_form">
-      <form action="/validate" method="post">
-        <label for="token">Token:</label>
-        <input id="token" type="text" name="token" placeholder="Insert your token" focus>
-        <br>
-        <input type="hidden" name="token_id" id="token_id" value=<%= "\"#{token_id}\"" %>>
-        <input type="submit">
-      </form>
+      <input type="hidden" name="token_id" id="token_id" value=<%= "\"#{token_id}\"" %>>
     </div>
     <script>
       function check_token_status() {
@@ -42,7 +36,7 @@
                 var status = data.status;
                 switch(status) {
                   case 'SENT':
-                    $("#token_status").html('Token has been sent to provided email address. Check your inbox and validate the token.');
+                    $("#token_status").html('Token has been sent to provided email address.<br>Check your inbox and validate the token.');
                     window.clearTimeout(queryjob);
                     break;
                   case 'LOOKUP_ERROR':

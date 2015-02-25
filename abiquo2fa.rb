@@ -4,8 +4,8 @@ require "abiquo-api"
 require 'json'
 require 'active_support/time'
 require "./token"
-require "./tokenize"
-require "./validate"
+require "./workers/tokenize"
+require "./workers/validate"
 
 # Token status
 # CREATED : Token has been created but hasn't been processed yet
@@ -45,10 +45,10 @@ class Abiquo2FA < Sinatra::Base
       $token.save
 
       Resque.enqueue(Tokenize, params[:username], params[:email], $token.token_id)
-      erb :validate, :locals => { :token_id => $token.token_id, :abiquo_login_url => APP_CONFIG['abiquo']['abiquo_login_url'] }
+      erb :tokenize, :locals => { :token_id => $token.token_id, :abiquo_login_url => APP_CONFIG['abiquo']['abiquo_login_url'] }
     rescue => e
       update_token_status('VALIDATION_ERROR',$token.token_id)
-      erb :error
+      erb :error, :locals => { :token_status => $token.status }
     end
 	end
 
@@ -59,22 +59,22 @@ class Abiquo2FA < Sinatra::Base
       raise 'CONSUMED_ERROR' if ($token.enabled)
       raise 'MATCH_ERROR' if ($token.token != params[:token])
       raise 'SECURITY_ERROR' if ($token.ip_address != request.ip)
-      raise 'EXPIRED_ERROR' if (token_exipred($token.token_id))
+      raise 'EXPIRED_ERROR' if (token_exipred($token.created_at))
+      if $token.status == 'SENT'
+        begin
+          update_token_status('PROCESSING',$token.token_id)
+          Resque.enqueue(Validate, $token.token_id)
+          erb :validate, :locals => { :token_id => $token.token_id, :abiquo_login_url => APP_CONFIG['abiquo']['abiquo_login_url'] }
+        rescue => e
+          update_token_status('VALIDATION_ERROR',$token.token_id)
+          erb :error, :locals => { :token_status => $token.status }
+        end
+      else
+        erb :error, :locals => { :token_status => $token.status }
+      end
     rescue => e
       update_token_status(e.message,$token.token_id)
-      erb :error
-    end
-    if $token.status == 'SENT'
-      begin
-        update_token_status('PROCESSING',$token.token_id)
-        Resque.enqueue(Validate, $token.token_id)
-        erb :authorize, :locals => { :token_id => $token.token_id, :abiquo_login_url => APP_CONFIG['abiquo']['abiquo_login_url'] }
-      rescue => e
-        update_token_status('VALIDATION_ERROR',$token.token_id)
-        erb :error
-      end
-    else
-      erb :error
+      erb :error, :locals => { :token_status => $token.status }
     end
   end
 
