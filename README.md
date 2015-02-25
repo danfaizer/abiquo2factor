@@ -125,16 +125,13 @@ whenever
 whenever -w
 ```
 
+By default, session expiration con job runs every 10 minutes, but you can easily change run schedule by editing cron <code>crontab -e</code> or modifying <code>tasks/schedule.rb</code> file.
+
 ### Create MySQL token database:
 ```bash
 mysql -u root -Nse "create database token"
 ```
-By default, session expiration con job runs every 10 minutes, but you can easily change run schedule by editing cron <code>crontab -e</code> or modifying <code>tasks/schedule.rb</code> file.
 
-### Abiquo session expire cron task:
-<code>TO-DO</code>: Cron, rake, whenever task to disable all Abiquo user's except excluded ones.
-
-Abiquo2Factor is ready to run.
 Abiquo2Factor is ready to run.
 
 <code>DISCLAIMER:</code> Ensure to allow access in iptables to port 9292 (Default Sinatra rake port).
