@@ -1,22 +1,34 @@
 <html>
   <head>
-    <title>Abiquo 2 Factor Authentication</title>
+    <title>Abiquo 2 factor authentication</title>
+    <style>
+      @import url(http://fonts.googleapis.com/css?family=Exo:100,200,400);
+      @import url(http://fonts.googleapis.com/css?family=Source+Sans+Pro:700,400,300);
+    </style>
     <script src="/jquery.min.js"></script>
+    <link rel="stylesheet" href="/abiquo2fa.css">
   </head>
   <body>
-    <div id="token_status">
-      <img src="/loading.gif">
-      <p>Generating token</p>
-    </div>
-    <div id="validate_form">
-      <form action="/validate" method="post">
-        <label for="token">Token:</label>
-        <input id="token" type="text" name="token" placeholder="Insert your token" focus>
-        <br>
-        <input type="hidden" name="token_id" id="token_id" value=<%= "\"#{token_id}\"" %>>
-        <input type="submit">
-      </form>
-    </div>
+
+    <div class="body"></div>
+      <div class="grad"></div>
+      <div class="header">
+        <div>Abiquo<br><span><strong>twoFactorAuthentication</strong></span></div>
+      </div>
+      <div id="token_status" class="status">
+        <img src="/loading.gif">
+        <p>Generating token</p>
+      </div>
+      <div class="login">
+        <div id="validate_form">
+          <form action="/validate" method="post">
+            <input id="token" type="text" name="token" placeholder="Insert your token" focus><br>
+            <input type="hidden" name="token_id" id="token_id" value=<%= "\"#{token_id}\"" %>>
+            <input type="submit" value="Validate token">
+          </form>
+        <div>
+      </div>
+
     <script>
       function check_token_status() {
         var queryjob;
@@ -42,7 +54,7 @@
                 var status = data.status;
                 switch(status) {
                   case 'SENT':
-                    $("#token_status").html('Token has been sent to provided email address. Check your inbox and validate the token.');
+                    $("#token_status").html('<style="color: green;">Token has been sent to provided email address. Check your inbox and validate the token.<style>');
                     window.clearTimeout(queryjob);
                     break;
                   case 'LOOKUP_ERROR':
